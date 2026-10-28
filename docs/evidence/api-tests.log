@@ -68,3 +68,51 @@ T15 저장: id 20 / T15 재시작 확인 / authorId 1 / createdAt 2026-10-28T05:
 | T15 | 재시작 후 같은 글 조회 | 없음 | GET /posts/20 | 200 | 200 | 제목·내용·작성자·시간 동일 | PASS |
 
 결과: 1개 중 1개 PASS
+Alice 토큰 eyJhbGciOi…(가림) / Bob 토큰 eyJhbGciOi…(가림)
+
+## 실행 2026-10-28 14:48:57  (대상 http://127.0.0.1:8000/api)
+
+| ID | 조건 | 사용자 | 요청 | 예상 | 실제 HTTP/code | 확인 내용 | 판정 |
+|---|---|---|---|---|---|---|---|
+| T01 | 토큰 없이 목록 | 없음 | GET /posts | 200 | 200 | 7개 | PASS |
+| T01 | 토큰 없이 존재하는 글 상세 | 없음 | GET /posts/24 | 200 | 200 | - | PASS |
+| T02 | 올바른 계정 로그인 | Alice | POST /auth/login | 200 | 200 | token eyJhbGciOi…(가림), expiresIn 90, user {'id': 1, 'name': 'Alice', 'email': 'alice@class.test'} | PASS |
+| T03 | 틀린 비밀번호 | Alice | POST /auth/login | 401 INVALID_CREDENTIALS | 401 INVALID_CREDENTIALS | accessToken 없음 | PASS |
+| T03 | 없는 이메일 | - | POST /auth/login | 401 INVALID_CREDENTIALS | 401 INVALID_CREDENTIALS | accessToken 없음 | PASS |
+| T04 | 토큰 없이 /me | 없음 | GET /me | 401 TOKEN_REQUIRED | 401 TOKEN_REQUIRED | WWW-Authenticate: Bearer | PASS |
+| T04 | 토큰 없이 글 등록 | 없음 | POST /posts | 401 TOKEN_REQUIRED | 401 TOKEN_REQUIRED | WWW-Authenticate: Bearer; 글 수 변화 없음 | PASS |
+| T04 | Bearer 형식 오류(Basic) | Alice | GET /me | 401 TOKEN_REQUIRED | 401 TOKEN_REQUIRED | WWW-Authenticate: Bearer | PASS |
+| T05 | Alice 글 작성 | Alice | POST /posts | 201 | 201 | Location: /api/posts/25; authorId 1 | PASS |
+| T05 | Alice /me | Alice | GET /me | 200 | 200 | {'id': 1, 'name': 'Alice', 'email': 'alice@class.test'} | PASS |
+| T07 | Bob이 Alice 글 수정 | Bob | PUT /posts/25 | 403 FORBIDDEN | 403 FORBIDDEN | 재조회: 원문 유지 | PASS |
+| T08 | Bob이 Alice 글 삭제 | Bob | DELETE /posts/25 | 403 FORBIDDEN | 403 FORBIDDEN | 재조회: 원문 유지 | PASS |
+| T09 | 변조 토큰 준비 | Alice | 서명 첫 글자 r → A | - | - | eyJhbGciOi…(가림) | - |
+| T09 | 변조 토큰 /me | Alice | GET /me | 401 INVALID_TOKEN | 401 INVALID_TOKEN | WWW-Authenticate: Bearer | PASS |
+| T09 | 변조 토큰 등록 | Alice | POST /posts | 401 INVALID_TOKEN | 401 INVALID_TOKEN | 글 수 변화 없음 | PASS |
+| T09 | 변조 토큰 수정 | Alice | PUT /posts/25 | 401 INVALID_TOKEN | 401 INVALID_TOKEN | 재조회: 원문 유지 | PASS |
+| T09 | 변조 토큰 삭제 | Alice | DELETE /posts/25 | 401 INVALID_TOKEN | 401 INVALID_TOKEN | 재조회: 원문 유지 | PASS |
+| T11 | 로그아웃 후 /me (헤더 없음) | 없음 | GET /me | 401 TOKEN_REQUIRED | 401 TOKEN_REQUIRED | WWW-Authenticate: Bearer | PASS |
+| T12 | 등록에 authorId:1 추가 | Bob | POST /posts | 400 BAD_INPUT | 400 BAD_INPUT | 위조 글 미생성 | PASS |
+| T12 | 등록에 userId:1 추가 | Bob | POST /posts | 400 BAD_INPUT | 400 BAD_INPUT | 위조 글 미생성 | PASS |
+| T13 | 빈 제목 | Alice | PUT /posts/25 | 400 BAD_INPUT | 400 BAD_INPUT | 재조회: 원문 유지 | PASS |
+| T13 | 공백 본문 | Alice | PUT /posts/25 | 400 BAD_INPUT | 400 BAD_INPUT | 재조회: 원문 유지 | PASS |
+| T13 | 제목 101자 | Alice | PUT /posts/25 | 400 BAD_INPUT | 400 BAD_INPUT | 재조회: 원문 유지 | PASS |
+| T13 | 본문 5001자 | Alice | PUT /posts/25 | 400 BAD_INPUT | 400 BAD_INPUT | 재조회: 원문 유지 | PASS |
+| T14 | 없는 글 조회 | 없음 | GET /posts/999999 | 404 NOT_FOUND | 404 NOT_FOUND | - | PASS |
+| T14 | 없는 글 수정 | Alice | PUT /posts/999999 | 404 NOT_FOUND | 404 NOT_FOUND | - | PASS |
+| T14 | 없는 글 삭제 | Alice | DELETE /posts/999999 | 404 NOT_FOUND | 404 NOT_FOUND | - | PASS |
+| T14 | 잘못된 ID 조회 | 없음 | GET /posts/abc | 400 BAD_INPUT | 400 BAD_INPUT | - | PASS |
+| T14 | 토큰 없이 없는 글 수정 | 없음 | PUT /posts/999999 | 401 TOKEN_REQUIRED | 401 TOKEN_REQUIRED | - | PASS |
+| T14 | Bob이 Alice 글에 공백 제목 | Bob | PUT /posts/25 | 403 FORBIDDEN | 403 FORBIDDEN | 재조회: 원문 유지 | PASS |
+| T06 | Alice 본인 글 수정 | Alice | PUT /posts/25 | 200 | 200 | 작성자·createdAt 유지 | PASS |
+| T06 | Alice 본인 글 삭제 | Alice | DELETE /posts/25 | 204 | 204 | 본문 0바이트 | PASS |
+| T06 | 삭제 후 조회 | 없음 | GET /posts/25 | 404 NOT_FOUND | 404 NOT_FOUND | - | PASS |
+| T17 | 토큰 없이 수정 | 없음 | PUT /posts/24 | 401 TOKEN_REQUIRED | 401 TOKEN_REQUIRED | WWW-Authenticate: Bearer | PASS |
+| T17 | 토큰 없이 삭제 | 없음 | DELETE /posts/24 | 401 TOKEN_REQUIRED | 401 TOKEN_REQUIRED | WWW-Authenticate: Bearer | PASS |
+| T17 | Bob 글 작성 | Bob | POST /posts | 201 | 201 | authorId 2 | PASS |
+| T17 | Bob 본인 글 수정 | Bob | PUT /posts/26 | 200 | 200 | - | PASS |
+| T17 | Bob 본인 글 삭제 | Bob | DELETE /posts/26 | 204 | 204 | 본문 0바이트 | PASS |
+
+T10(만료): `--expiry` 로 따로 실행. T11 화면 해제, T15 재시작, T16 새로고침: 브라우저에서 직접 확인.
+
+결과: 37개 중 37개 PASS

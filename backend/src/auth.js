@@ -26,8 +26,8 @@ function loadTtl() { //ttl 안전 장치
 
 const SECRET = loadSecret();
 const TTL = loadTtl();
-const ISSUER = process.env.JWT_ISSuer || "webservice-class";
-const AUDIENCE = process.env.AUDIENCE || "borad-api";
+const ISSUER = process.env.JWT_ISSUER || "webservice-class";
+const AUDIENCE = process.env.JWT_AUDIENCE || "board-api";
 
 export function issueToken(user) {
   // BE-01: 서버 환경변수 키로 HS256 JWT 발급. sub, exp, iss, aud 필수.
